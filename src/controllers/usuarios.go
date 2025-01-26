@@ -49,6 +49,6 @@ func DeletarUsuario(w http.ResponseWriter, r *http.Request) {
 }
 func WriteResponse(w http.ResponseWriter, message string) {
 	if _, err := w.Write([]byte(message)); err != nil {
-		log.Fatal("Erro ao fechar o write: %v", err)
+		log.Fatalf("Erro ao fechar o write: %v", err)
 	}
 }
