@@ -1,7 +1,9 @@
 package modelos
 
 import (
+	"api/src/seguranca"
 	"fmt"
+	"github.com/badoux/checkmail"
 	"strings"
 	"time"
 )
@@ -16,7 +18,9 @@ type Usuario struct {
 }
 
 func (usuario *Usuario) Preparar(etapa string) error {
-	usuario.formatar()
+	if erro := usuario.formatar(etapa); erro != nil {
+		return erro
+	}
 	if erro := usuario.validar(etapa); erro != nil {
 		return erro
 	}
@@ -36,11 +40,25 @@ func (usuario *Usuario) validar(etapa string) error {
 			return fmt.Errorf("O campo %s é obrigatório e não pode estar em branco", campo)
 		}
 	}
+	if err := checkmail.ValidateFormat(usuario.Email); err != nil {
+		return fmt.Errorf("o campo email está em um formato inválido")
+	}
+
 	return nil
 }
 
-func (usuario *Usuario) formatar() {
+func (usuario *Usuario) formatar(etapa string) error {
 	usuario.Nome = strings.TrimSpace(usuario.Nome)
 	usuario.Nick = strings.TrimSpace(usuario.Nick)
 	usuario.Email = strings.TrimSpace(usuario.Email)
+
+	if etapa == "cadastro" {
+		senhaComHash, erro := seguranca.Hash(usuario.Senha)
+		if erro != nil {
+			return erro
+		}
+
+		usuario.Senha = string(senhaComHash)
+	}
+	return nil
 }
