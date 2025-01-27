@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func CriarUsuario(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +36,7 @@ func CriarUsuario(w http.ResponseWriter, r *http.Request) {
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
-
+			log.Fatal("Erro ao fechar o banco de dados", err)
 		}
 	}(db)
 
@@ -48,7 +49,21 @@ func CriarUsuario(w http.ResponseWriter, r *http.Request) {
 	respostas.JSON(w, http.StatusCreated, usuario)
 }
 func BuscarUsuarios(w http.ResponseWriter, r *http.Request) {
-	WriteResponse(w, "Buscando usuários!")
+	nomeOuNick := strings.ToLower(r.URL.Query().Get("usuario"))
+	db, erro := banco.Conectar()
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+	}
+	defer func(db *sql.DB) {
+		if erro := db.Close(); erro != nil {
+			log.Fatal("Erro ao fechar o banco de dados", erro)
+		}
+	}(db)
+
+	repositorio := repositorios.NovoRepositorioDeUsuarios(db)
+	usuarios, erro := repositorio.Buscar(nomeOuNick)
+
+	respostas.JSON(w, http.StatusOK, usuarios)
 }
 func BuscarUsuario(w http.ResponseWriter, r *http.Request) {
 	WriteResponse(w, "Buscando usuário!")
