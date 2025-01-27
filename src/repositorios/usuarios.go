@@ -74,3 +74,68 @@ func (repositorio Usuarios) Buscar(nomeOuNick string) ([]modelos.Usuario, error)
 
 	return usuarios, nil
 }
+
+func (repositorio Usuarios) BuscarPorID(usuarioID int) (modelos.Usuario, error) {
+	linhas, erro := repositorio.db.Query(
+		"select id, nome, nick, email, criadoEm from usuarios where id = ?",
+		usuarioID)
+	if erro != nil {
+		return modelos.Usuario{}, erro
+	}
+	defer func(linhas *sql.Rows) {
+		if erro := linhas.Close(); erro != nil {
+			log.Fatal(erro)
+		}
+	}(linhas)
+
+	var usuario modelos.Usuario
+	for linhas.Next() {
+		if erro = linhas.Scan(
+			&usuario.ID,
+			&usuario.Nome,
+			&usuario.Nick,
+			&usuario.Email,
+			&usuario.CriadoEm); erro != nil {
+			return modelos.Usuario{}, nil
+		}
+	}
+	return usuario, nil
+}
+
+func (repositorio Usuarios) Atualizar(ID int, usuario modelos.Usuario) error {
+	statement, erro := repositorio.db.Prepare(
+		"update usuarios set nome = ?, nick = ?, email = ? where id = ?",
+	)
+	if erro != nil {
+		return erro
+	}
+	defer func(statement *sql.Stmt) {
+		erro := statement.Close()
+		if erro != nil {
+
+		}
+	}(statement)
+
+	if _, erro = statement.Exec(usuario.Nome, usuario.ID, usuario.Email, ID); erro != nil {
+		return erro
+	}
+	return nil
+}
+
+func (repositorio Usuarios) Deletar(ID int) error {
+	statement, erro := repositorio.db.Prepare("delete from usuarios where id = ?")
+	if erro != nil {
+		return erro
+	}
+	defer func(statement *sql.Stmt) {
+		err := statement.Close()
+		if err != nil {
+
+		}
+	}(statement)
+
+	if _, erro = statement.Exec(ID); erro != nil {
+		return erro
+	}
+	return nil
+}
