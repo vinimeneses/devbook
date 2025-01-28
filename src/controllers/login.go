@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"api/src/autenticacao"
 	"api/src/banco"
 	"api/src/modelos"
 	"api/src/repositorios"
@@ -8,6 +9,7 @@ import (
 	"api/src/seguranca"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -48,7 +50,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		respostas.Erro(w, http.StatusUnauthorized, erro)
 		return
 	}
-	_, err := w.Write([]byte("Parabéns, você está logado!"))
+	token, _ := autenticacao.CriarToken(usuario.ID)
+	fmt.Println(token)
+	_, err := w.Write([]byte(token))
 	if err != nil {
 		return
 	}
