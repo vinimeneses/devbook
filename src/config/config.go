@@ -33,5 +33,4 @@ func Carregar() {
 	)
 
 	SecretKey = []byte(os.Getenv("SECRET_KEY"))
-
 }

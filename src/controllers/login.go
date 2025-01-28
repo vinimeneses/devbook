@@ -50,9 +50,16 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		respostas.Erro(w, http.StatusUnauthorized, erro)
 		return
 	}
-	token, _ := autenticacao.CriarToken(usuario.ID)
+
+	token, erro := autenticacao.CriarToken(usuario.ID)
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
 	fmt.Println(token)
-	_, err := w.Write([]byte(token))
+
+	_, err := w.Write([]byte(".."))
 	if err != nil {
 		return
 	}
