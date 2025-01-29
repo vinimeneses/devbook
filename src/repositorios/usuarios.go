@@ -17,7 +17,7 @@ func NovoRepositorioDeUsuarios(db *sql.DB) *Usuarios {
 
 func (repositorio Usuarios) Criar(usuario modelos.Usuario) (uint64, error) {
 	statement, erro := repositorio.db.Prepare(
-		"insert into usuarios (nome, nick, email, senha) values (?, ?, ?, ?)",
+		"insert into usuarios (nome, nick, email, senha) values(?, ?, ?, ?)",
 	)
 	if erro != nil {
 		return 0, erro
@@ -25,6 +25,7 @@ func (repositorio Usuarios) Criar(usuario modelos.Usuario) (uint64, error) {
 	defer func(statement *sql.Stmt) {
 		err := statement.Close()
 		if err != nil {
+			log.Fatal(erro)
 		}
 	}(statement)
 
@@ -39,19 +40,24 @@ func (repositorio Usuarios) Criar(usuario modelos.Usuario) (uint64, error) {
 	}
 
 	return uint64(ultimoIDInserido), nil
+
 }
 
+// Buscar traz todos os usuários que atendem um filtro de nome ou nick
 func (repositorio Usuarios) Buscar(nomeOuNick string) ([]modelos.Usuario, error) {
 	nomeOuNick = fmt.Sprintf("%%%s%%", nomeOuNick) // %nomeOuNick%
 
 	linhas, erro := repositorio.db.Query(
 		"select id, nome, nick, email, criadoEm from usuarios where nome LIKE ? or nick LIKE ?",
-		nomeOuNick, nomeOuNick)
+		nomeOuNick, nomeOuNick,
+	)
+
 	if erro != nil {
 		return nil, erro
 	}
 	defer func(linhas *sql.Rows) {
-		if erro = linhas.Close(); erro != nil {
+		err := linhas.Close()
+		if err != nil {
 			log.Fatal(erro)
 		}
 	}(linhas)
@@ -66,43 +72,52 @@ func (repositorio Usuarios) Buscar(nomeOuNick string) ([]modelos.Usuario, error)
 			&usuario.Nome,
 			&usuario.Nick,
 			&usuario.Email,
-			&usuario.CriadoEm); erro != nil {
+			&usuario.CriadoEm,
+		); erro != nil {
 			return nil, erro
 		}
+
 		usuarios = append(usuarios, usuario)
 	}
 
 	return usuarios, nil
 }
 
-func (repositorio Usuarios) BuscarPorID(usuarioID int) (modelos.Usuario, error) {
+// BuscarPorID traz um usuário do banco de dados
+func (repositorio Usuarios) BuscarPorID(ID uint64) (modelos.Usuario, error) {
 	linhas, erro := repositorio.db.Query(
 		"select id, nome, nick, email, criadoEm from usuarios where id = ?",
-		usuarioID)
+		ID,
+	)
 	if erro != nil {
 		return modelos.Usuario{}, erro
 	}
 	defer func(linhas *sql.Rows) {
-		if erro := linhas.Close(); erro != nil {
+		err := linhas.Close()
+		if err != nil {
 			log.Fatal(erro)
 		}
 	}(linhas)
 
 	var usuario modelos.Usuario
-	for linhas.Next() {
+
+	if linhas.Next() {
 		if erro = linhas.Scan(
 			&usuario.ID,
 			&usuario.Nome,
 			&usuario.Nick,
 			&usuario.Email,
-			&usuario.CriadoEm); erro != nil {
-			return modelos.Usuario{}, nil
+			&usuario.CriadoEm,
+		); erro != nil {
+			return modelos.Usuario{}, erro
 		}
 	}
+
 	return usuario, nil
 }
 
-func (repositorio Usuarios) Atualizar(ID int, usuario modelos.Usuario) error {
+// Atualizar altera as informações de um usuário no banco de dados
+func (repositorio Usuarios) Atualizar(ID uint64, usuario modelos.Usuario) error {
 	statement, erro := repositorio.db.Prepare(
 		"update usuarios set nome = ?, nick = ?, email = ? where id = ?",
 	)
@@ -110,19 +125,21 @@ func (repositorio Usuarios) Atualizar(ID int, usuario modelos.Usuario) error {
 		return erro
 	}
 	defer func(statement *sql.Stmt) {
-		erro := statement.Close()
-		if erro != nil {
-
+		err := statement.Close()
+		if err != nil {
+			log.Fatal(erro)
 		}
 	}(statement)
 
-	if _, erro = statement.Exec(usuario.Nome, usuario.ID, usuario.Email, ID); erro != nil {
+	if _, erro = statement.Exec(usuario.Nome, usuario.Nick, usuario.Email, ID); erro != nil {
 		return erro
 	}
+
 	return nil
 }
 
-func (repositorio Usuarios) Deletar(ID int) error {
+// Deletar exclui as informações de um usuário no banco de dados
+func (repositorio Usuarios) Deletar(ID uint64) error {
 	statement, erro := repositorio.db.Prepare("delete from usuarios where id = ?")
 	if erro != nil {
 		return erro
@@ -130,13 +147,14 @@ func (repositorio Usuarios) Deletar(ID int) error {
 	defer func(statement *sql.Stmt) {
 		err := statement.Close()
 		if err != nil {
-
+			log.Fatal(erro)
 		}
 	}(statement)
 
 	if _, erro = statement.Exec(ID); erro != nil {
 		return erro
 	}
+
 	return nil
 }
 
@@ -148,7 +166,7 @@ func (repositorio Usuarios) BuscarPorEmail(email string) (modelos.Usuario, error
 	defer func(linha *sql.Rows) {
 		err := linha.Close()
 		if err != nil {
-
+			log.Fatal(erro)
 		}
 	}(linha)
 
@@ -156,8 +174,10 @@ func (repositorio Usuarios) BuscarPorEmail(email string) (modelos.Usuario, error
 
 	if linha.Next() {
 		if erro = linha.Scan(&usuario.ID, &usuario.Senha); erro != nil {
-			return modelos.Usuario{}, nil
+			return modelos.Usuario{}, erro
 		}
 	}
+
 	return usuario, nil
+
 }

@@ -2,16 +2,19 @@ package config
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
 )
 
 var (
 	StringConexaoBanco = ""
-	Porta              = 0
-	SecretKey          []byte
+
+	Porta = 0
+
+	SecretKey []byte
 )
 
 func Carregar() {

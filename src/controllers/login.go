@@ -9,9 +9,7 @@ import (
 	"api/src/seguranca"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -23,8 +21,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var usuario modelos.Usuario
-	erro = json.Unmarshal(corpoRequisicao, &usuario)
-	if erro != nil {
+	if erro = json.Unmarshal(corpoRequisicao, &usuario); erro != nil {
 		respostas.Erro(w, http.StatusBadRequest, erro)
 		return
 	}
@@ -32,11 +29,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	db, erro := banco.Conectar()
 	if erro != nil {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
 	}
 	defer func(db *sql.DB) {
-		erro := db.Close()
-		if erro != nil {
-			log.Fatal(erro)
+		err := db.Close()
+		if err != nil {
+
 		}
 	}(db)
 
@@ -44,6 +42,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	usuarioSalvoNoBanco, erro := repositorio.BuscarPorEmail(usuario.Email)
 	if erro != nil {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
 	}
 
 	if erro = seguranca.VerificarSenha(usuarioSalvoNoBanco.Senha, usuario.Senha); erro != nil {
@@ -51,16 +50,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, erro := autenticacao.CriarToken(usuario.ID)
+	token, erro := autenticacao.CriarToken(usuarioSalvoNoBanco.ID)
 	if erro != nil {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
 		return
 	}
-
-	fmt.Println(token)
-
-	_, err := w.Write([]byte(".."))
-	if err != nil {
-		return
-	}
+	println(token)
 }
