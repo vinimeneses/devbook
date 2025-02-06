@@ -56,5 +56,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respostas.JSON(w, http.StatusOK, token)
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write([]byte(token))
+	if err != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
 }

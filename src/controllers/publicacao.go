@@ -34,7 +34,6 @@ func CriarPublicacao(w http.ResponseWriter, r *http.Request) {
 	}
 
 	publicacao.AutorID = usuarioID
-
 	if erro = publicacao.Preparar(); erro != nil {
 		respostas.Erro(w, http.StatusBadRequest, erro)
 		return
@@ -87,7 +86,31 @@ func BuscarPublicacao(w http.ResponseWriter, r *http.Request) {
 }
 
 func BuscarPublicacoes(w http.ResponseWriter, r *http.Request) {
+	usuarioID, erro := autenticacao.ExtrairUsuarioID(r)
+	if erro != nil {
+		respostas.Erro(w, http.StatusUnauthorized, erro)
+		return
+	}
 
+	db, erro := banco.Conectar()
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer func(db *sql.DB) {
+		erro := db.Close()
+		if erro != nil {
+			log.Fatal(erro)
+		}
+	}(db)
+	repositorio := repositorios.NovoRepositorioDePublicacoes(db)
+	publicacoes, erro := repositorio.Buscar(usuarioID)
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	respostas.JSON(w, http.StatusOK, publicacoes)
 }
 
 func AtualizarPublicacao(w http.ResponseWriter, r *http.Request) {
